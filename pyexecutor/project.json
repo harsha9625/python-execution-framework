@@ -1,0 +1,16 @@
+{
+  "files": [
+    {
+      "filename": "executor.py",
+      "code": "import sys\nfrom io import StringIO\n\ndef run_python_file(file_path, variables: dict):\n    try:\n        with open(file_path, \"r\") as f:\n            code = f.read()\n        exec_globals = dict(variables)\n        old_stdout = sys.stdout\n        sys.stdout = StringIO()\n        exec(code, exec_globals)\n        output = sys.stdout.getvalue()\n        sys.stdout = old_stdout\n        return {\"returncode\": 0, \"stdout\": output, \"stderr\": \"\"}\n    except Exception as e:\n        return {\"returncode\": -1, \"stdout\": \"\", \"stderr\": str(e)}"
+    },
+    {
+      "filename": "runner.py",
+      "code": "import json\nfrom pyexecutor import run_python_file\n\ndef load_test_cases(json_file):\n    with open(json_file, \"r\") as f:\n        return json.load(f)\n\ndef compare_outputs(actual, expected):\n    return actual.strip() == expected.strip()\n\ndef main():\n    test_cases = load_test_cases(\"test_cases.json\")\n    passed, failed = 0, 0\n    for i, case in enumerate(test_cases, 1):\n        print(f\"\\n🧪 Running Test Case #{i}\")\n        input_vars = case[\"input\"]\n        expected_output = case[\"expected_output\"]\n        result = run_python_file(\"sample_script.py\", input_vars)\n        if result[\"returncode\"] != 0:\n            print(f\"  ❌ Error running script: {result['stderr']}\")\n            failed += 1\n            continue\n        actual_output = result[\"stdout\"]\n        if compare_outputs(actual_output, expected_output):\n            print(f\"  ✅ Passed\")\n            passed += 1\n        else:\n            print(f\"  ❌ Failed\")\n            print(f\"     Expected: {repr(expected_output)}\")\n            print(f\"     Got:      {repr(actual_output)}\")\n            failed += 1\n    print(f\"\\n📊 Summary: ✅ {passed} Passed, ❌ {failed} Failed\")\n\nif __name__ == \"__main__\":\n    main()"
+    },
+    {
+      "filename": "__init__.py",
+      "code": "from .executor import run_python_file"
+    }
+  ]
+}
